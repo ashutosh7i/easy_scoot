@@ -2,7 +2,7 @@ import 'package:appwrite/appwrite.dart';
 import 'package:appwrite/models.dart';
 import 'package:flutter/widgets.dart';
 
-const String APPWRITE_PROJECT_ID = "xxxxxxxxxxxxxxxxxxxx";
+const String APPWRITE_PROJECT_ID = "6719118a002fcf2e7c4d";
 const String APPWRITE_URL = "https://cloud.appwrite.io/v1";
 
 enum AuthStatus {
@@ -97,4 +97,14 @@ class AuthAPI extends ChangeNotifier {
   updatePreferences({required String bio}) async {
     return account.updatePrefs(prefs: {'bio': bio});
   }
+
+  isuserOnboarded() async {
+    final prefs = await getUserPreferences();
+    return prefs.data['onboarded'] ?? false;
+  }
+
+  onboardUser() async {
+    return account.updatePrefs(prefs: {'onboarded': true});
+  }
+  //
 }
