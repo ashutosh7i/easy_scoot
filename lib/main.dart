@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+import 'pages/otpLogin.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(const OtpLogin());
 }
 
 class MyApp extends StatelessWidget {
