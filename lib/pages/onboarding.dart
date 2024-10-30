@@ -4,6 +4,7 @@ import 'package:easy_scoot/appwrite/auth.dart'; // Ensure this is correctly impo
 import 'home.dart'; // Ensure this is correctly imported
 import 'package:easy_scoot/widgets/Astartup_loading.dart';
 import 'package:percent_indicator/linear_percent_indicator.dart';
+import 'package:intl/intl.dart';
 
 class Onboarding extends StatefulWidget {
   const Onboarding({Key? key}) : super(key: key);
@@ -96,6 +97,8 @@ class _OnboardingPageState extends State<OnboardingPage> {
         return TakeSelfiePage(onContinue: _goToNextStep);
       case 3:
         return AadharScanPage(onContinue: _goToNextStep);
+      case 4:
+        return AuthenticationSuccessfulPage();
       default:
         return Container();
     }
@@ -105,27 +108,35 @@ class _OnboardingPageState extends State<OnboardingPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("easy scoot"),
+        title: Image(
+          image: AssetImage('images/navlogo.png'),
+          height: 30,
+        ),
         centerTitle: true,
       ),
       body: Column(
         children: [
           if (currentStep != 0) // Show progress bar only after welcome screen
             Padding(
-              padding: EdgeInsets.all(15.0),
-              child: LinearPercentIndicator(
-                width: MediaQuery.of(context).size.width * 0.8,
-                lineHeight: 14.0,
-                percent: getProgress(),
-                center: Text(
-                  "${(getProgress() * 100).toStringAsFixed(0)}%",
-                  style: TextStyle(fontSize: 12.0),
-                ),
-                linearStrokeCap: LinearStrokeCap.roundAll,
-                backgroundColor: Colors.grey,
-                progressColor: Colors.blue,
-              ),
-            ),
+                padding: EdgeInsets.all(15.0),
+                child: Column(
+                    mainAxisAlignment: MainAxisAlignment
+                        .center, // Align the progress bar to the center
+                    children: [
+                      Text('Step ${currentStep} of 4'),
+                      LinearPercentIndicator(
+                        width: MediaQuery.of(context).size.width * 0.8,
+                        lineHeight: 14.0,
+                        percent: getProgress(),
+                        center: Text(
+                          "${(getProgress() * 100).toStringAsFixed(0)}%",
+                          style: TextStyle(fontSize: 12.0),
+                        ),
+                        linearStrokeCap: LinearStrokeCap.roundAll,
+                        backgroundColor: Colors.grey,
+                        progressColor: Colors.blue,
+                      ),
+                    ])),
           Expanded(child: _buildCurrentStep()),
         ],
       ),
@@ -144,20 +155,39 @@ class WelcomePage extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Text(
-            "Welcome new user,",
-            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-          ),
-          SizedBox(height: 20),
-          Text(
-            "We need some info before you can start using easy scoot. "
-            "Sit in a well-lit environment and keep your Aadhar card ready.",
-            textAlign: TextAlign.center,
-          ),
-          SizedBox(height: 20),
-          ElevatedButton(
-            onPressed: onStart,
-            child: Text("Start >"),
+          // Welcome Card
+          Container(
+            width: 300,
+            padding: EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Colors.redAccent,
+              borderRadius: BorderRadius.circular(15),
+            ),
+            child: Column(
+              children: [
+                Text(
+                  'Welcome new user,\n\n'
+                  'we need some info before you can start using easyscoot\n\n'
+                  'sit in a well-lit condition and keep your Aadhar card ready.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                SizedBox(height: 20),
+                ElevatedButton(
+                  onPressed: () {
+                    onStart();
+                  },
+                  child: Text(
+                    'Start >',
+                    style: TextStyle(fontSize: 16),
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -176,8 +206,11 @@ class PersonalDetailsPage extends StatefulWidget {
 
 class _PersonalDetailsPageState extends State<PersonalDetailsPage> {
   final _formKey = GlobalKey<FormState>();
+  final _firstNameController = TextEditingController();
+  final _lastNameController = TextEditingController();
   final _emailController = TextEditingController();
   DateTime? selectedDate;
+  String? dateValidationError;
 
   @override
   Widget build(BuildContext context) {
@@ -188,24 +221,63 @@ class _PersonalDetailsPageState extends State<PersonalDetailsPage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text(
-              "Personal Details",
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-            ),
-            SizedBox(height: 20),
             TextFormField(
-              decoration: InputDecoration(labelText: "First Name"),
+              controller: _firstNameController,
+              decoration: InputDecoration(
+                labelText: "First Name",
+                border: OutlineInputBorder(),
+              ),
               validator: (value) =>
                   value!.isEmpty ? 'Please enter your first name' : null,
             ),
+            SizedBox(height: 10),
             TextFormField(
-              decoration: InputDecoration(labelText: "Last Name"),
+              controller: _lastNameController,
+              decoration: InputDecoration(
+                labelText: "Last Name",
+                border: OutlineInputBorder(),
+              ),
               validator: (value) =>
                   value!.isEmpty ? 'Please enter your last name' : null,
             ),
+            SizedBox(height: 10),
             TextFormField(
-              decoration: InputDecoration(labelText: "Email Address"),
+              controller: TextEditingController(
+                  text: selectedDate == null
+                      ? ''
+                      : DateFormat('yyyy-MM-dd').format(selectedDate!)),
+              decoration: InputDecoration(
+                labelText: 'Date of Birth',
+                border: OutlineInputBorder(),
+                suffixIcon: IconButton(
+                  icon: Icon(Icons.calendar_today),
+                  onPressed: () async {
+                    DateTime? picked = await showDatePicker(
+                      context: context,
+                      initialDate: selectedDate ?? DateTime.now(),
+                      firstDate: DateTime(1900),
+                      lastDate: DateTime.now(),
+                    );
+                    if (picked != null && picked != selectedDate) {
+                      setState(() {
+                        selectedDate = picked;
+                        dateValidationError = null;
+                        print(
+                            'Selected Date of Birth: ${DateFormat('yyyy-MM-dd').format(selectedDate!)}'); // Print selected date
+                      });
+                    }
+                  },
+                ),
+              ),
+              readOnly: true,
+            ),
+            SizedBox(height: 10),
+            TextFormField(
               controller: _emailController,
+              decoration: InputDecoration(
+                labelText: "Email Address",
+                border: OutlineInputBorder(),
+              ),
               validator: (value) {
                 if (value == null || value.isEmpty) {
                   return 'Please enter your email';
@@ -217,39 +289,20 @@ class _PersonalDetailsPageState extends State<PersonalDetailsPage> {
                 return null;
               },
             ),
-            SizedBox(height: 10),
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    selectedDate == null
-                        ? 'Date of Birth'
-                        : 'Date of Birth: ${selectedDate!.toLocal()}'
-                            .split(' ')[0],
-                  ),
-                ),
-                ElevatedButton(
-                  onPressed: () async {
-                    DateTime? picked = await showDatePicker(
-                      context: context,
-                      initialDate: DateTime.now(),
-                      firstDate: DateTime(1900),
-                      lastDate: DateTime.now(),
-                    );
-                    if (picked != null && picked != selectedDate) {
-                      setState(() {
-                        selectedDate = picked;
-                      });
-                    }
-                  },
-                  child: Text("Select Date"),
-                ),
-              ],
-            ),
             Spacer(),
             ElevatedButton(
               onPressed: () {
-                if (_formKey.currentState!.validate() && selectedDate != null) {
+                if (_formKey.currentState!.validate()) {
+                  // Print all data
+                  print('First Name: ${_firstNameController.text}');
+                  print('Last Name: ${_lastNameController.text}');
+                  print('Email: ${_emailController.text}');
+                  if (selectedDate != null) {
+                    print(
+                        'Date of Birth: ${DateFormat('yyyy-MM-dd').format(selectedDate!)}');
+                  } else {
+                    print('Date of Birth: Not selected');
+                  }
                   widget.onContinue();
                 }
               },
@@ -278,9 +331,12 @@ class TakeSelfiePage extends StatelessWidget {
             "Take Selfie",
             style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
           ),
+          Text(
+            "Fill your details and click continue",
+            style: TextStyle(fontSize: 15, color: Colors.grey),
+          ),
           SizedBox(height: 20),
-          Image.asset('assets/placeholder_selfie.png',
-              height: 200), // Mock selfie image
+          Image.asset('images/selfie.png', height: 300), // Mock selfie image
           SizedBox(height: 20),
           ElevatedButton(
             onPressed: onContinue,
@@ -308,9 +364,12 @@ class AadharScanPage extends StatelessWidget {
             "Aadhar Scan",
             style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
           ),
+          Text(
+            "We will scan your Aadhar card to validate.",
+            style: TextStyle(fontSize: 15, color: Colors.grey),
+          ),
           SizedBox(height: 20),
-          Image.asset('assets/placeholder_aadhar.png',
-              height: 200), // Mock Aadhar image
+          Image.asset('images/card.png', height: 200), // Mock Aadhar image
           SizedBox(height: 20),
           ElevatedButton(
             onPressed: onContinue,
@@ -325,35 +384,31 @@ class AadharScanPage extends StatelessWidget {
 class AuthenticationSuccessfulPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text("easy scoot"),
-      ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              "Authentication Successful",
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-            ),
-            SizedBox(height: 20),
-            Image.asset('assets/placeholder_success.png',
-                height: 200), // Mock success image
-            SizedBox(height: 20),
-            Text(
-              "Thank you for going through the verification process.",
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 16),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.pop(context);
-              },
-              child: Text("Let's Go"),
-            ),
-          ],
-        ),
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            "Authentication Successful",
+            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+          ),
+          SizedBox(height: 20),
+          Image.asset('images/success.png', height: 200), // Mock success image
+          SizedBox(height: 20),
+          Text(
+            "Thank you for going through verification process. Click the button below to continue.",
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 15),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              // call validator function that takes all and validates, if true sets the onboarded to true and navigates to home
+
+              Navigator.pop(context);
+            },
+            child: Text("Let's Go"),
+          ),
+        ],
       ),
     );
   }
