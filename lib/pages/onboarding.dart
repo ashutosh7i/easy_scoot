@@ -5,6 +5,8 @@ import 'home.dart'; // Ensure this is correctly imported
 import 'package:easy_scoot/widgets/Astartup_loading.dart';
 import 'package:percent_indicator/linear_percent_indicator.dart';
 import 'package:intl/intl.dart';
+import 'package:livelyness_detection/livelyness_detection.dart';
+import 'dart:io';
 
 class Onboarding extends StatefulWidget {
   const Onboarding({Key? key}) : super(key: key);
@@ -64,7 +66,7 @@ class OnboardingPage extends StatefulWidget {
 }
 
 class _OnboardingPageState extends State<OnboardingPage> {
-  int currentStep = 0;
+  int currentStep = 2;
 
   void _goToNextStep() {
     if (currentStep < 4) {
@@ -315,34 +317,249 @@ class _PersonalDetailsPageState extends State<PersonalDetailsPage> {
   }
 }
 
-class TakeSelfiePage extends StatelessWidget {
+// class TakeSelfiePage extends StatelessWidget {
+//   final VoidCallback onContinue;
+
+//   TakeSelfiePage({required this.onContinue});
+
+//   @override
+//   Widget build(BuildContext context) {
+//     return Padding(
+//       padding: EdgeInsets.all(16.0),
+//       child: Column(
+//         mainAxisAlignment: MainAxisAlignment.center,
+//         children: [
+//           Text(
+//             "Take Selfie",
+//             style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+//           ),
+//           Text(
+//             "Fill your details and click continue",
+//             style: TextStyle(fontSize: 15, color: Colors.grey),
+//           ),
+//           SizedBox(height: 20),
+//           Image.asset('images/selfie.png', height: 300), // Mock selfie image
+//           SizedBox(height: 20),
+//           ElevatedButton(
+//             child: Text("Capture Photo"),
+//             onPressed: () async {
+//               try {
+//                 final String? response =
+//                     await LivelynessDetection.instance.detectLivelyness(
+//                   context,
+//                   config: DetectionConfig(
+//                     steps: [
+//                       LivelynessStepItem(
+//                         step: LivelynessStep.blink,
+//                         title: "Blink",
+//                         isCompleted: false,
+//                       ),
+//                       LivelynessStepItem(
+//                         step: LivelynessStep.smile,
+//                         title: "Smile",
+//                         isCompleted: false,
+//                       ),
+//                     ],
+//                     startWithInfoScreen: true,
+//                   ),
+//                 );
+
+//                 // Handle the response by showing an alert dialog
+//                 if (response != null) {
+//                   showDialog(
+//                     context: context,
+//                     builder: (BuildContext context) {
+//                       return AlertDialog(
+//                         title: Text("Success"),
+//                         content:
+//                             Text("Livelyness Detection Response: $response"),
+//                         actions: <Widget>[
+//                           TextButton(
+//                             child: Text("OK"),
+//                             onPressed: () {
+//                               Navigator.of(context).pop(); // Close the dialog
+//                             },
+//                           ),
+//                         ],
+//                       );
+//                     },
+//                   );
+//                 } else {
+//                   // Handle null response if necessary
+//                   showDialog(
+//                     context: context,
+//                     builder: (BuildContext context) {
+//                       return AlertDialog(
+//                         title: Text("No Response"),
+//                         content: Text(
+//                             "No response was received from the detection."),
+//                         actions: <Widget>[
+//                           TextButton(
+//                             child: Text("OK"),
+//                             onPressed: () {
+//                               Navigator.of(context).pop(); // Close the dialog
+//                             },
+//                           ),
+//                         ],
+//                       );
+//                     },
+//                   );
+//                 }
+//               } catch (e) {
+//                 // Handle any errors that occur during detection
+//                 showDialog(
+//                   context: context,
+//                   builder: (BuildContext context) {
+//                     return AlertDialog(
+//                       title: Text("Error"),
+//                       content: Text("An error occurred during detection: $e"),
+//                       actions: <Widget>[
+//                         TextButton(
+//                           child: Text("OK"),
+//                           onPressed: () {
+//                             Navigator.of(context).pop(); // Close the dialog
+//                           },
+//                         ),
+//                       ],
+//                     );
+//                   },
+//                 );
+//               }
+//             },
+//           ),
+//         ],
+//       ),
+//     );
+//   }
+// }
+
+// import 'package:flutter/material.dart';
+// import 'package:livelyness_detection/livelyness_detection.dart';
+class TakeSelfiePage extends StatefulWidget {
   final VoidCallback onContinue;
 
   TakeSelfiePage({required this.onContinue});
 
   @override
+  _TakeSelfiePageState createState() => _TakeSelfiePageState();
+}
+
+class _TakeSelfiePageState extends State<TakeSelfiePage> {
+  String? _capturedImagePath;
+
+  Future<void> capturePhoto() async {
+    try {
+      final CapturedImage? response =
+          await LivelynessDetection.instance.detectLivelyness(
+        context,
+        config: DetectionConfig(
+          allowAfterMaxSec: true,
+          captureButtonColor: Colors.red,
+          maxSecToDetect: 60,
+          steps: [
+            LivelynessStepItem(
+              step: LivelynessStep.blink,
+              title: "Blink",
+              isCompleted: false,
+            ),
+            LivelynessStepItem(
+              step: LivelynessStep.turnLeft,
+              title: "Turn Left",
+              isCompleted: false,
+            ),
+            LivelynessStepItem(
+              step: LivelynessStep.turnRight,
+              title: "Turn Right",
+              isCompleted: false,
+            ),
+            LivelynessStepItem(
+              step: LivelynessStep.smile,
+              title: "Smile",
+              isCompleted: false,
+            ),
+          ],
+          startWithInfoScreen: true,
+        ),
+      );
+
+      if (response != null) {
+        showErrorDialog("Image capture successful");
+        setState(() {
+          _capturedImagePath = response.imgPath;
+        });
+      } else {
+        showErrorDialog("No response was received from the detection.");
+      }
+    } catch (e) {
+      showErrorDialog("An error occurred during detection: $e");
+    }
+  }
+
+  void showErrorDialog(String message) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text("Error"),
+          content: Text(message),
+          actions: <Widget>[
+            TextButton(
+              child: Text("OK"),
+              onPressed: () {
+                Navigator.of(context).pop(); // Close the dialog
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.all(16.0),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text(
-            "Take Selfie",
-            style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-          ),
-          Text(
-            "Fill your details and click continue",
-            style: TextStyle(fontSize: 15, color: Colors.grey),
-          ),
-          SizedBox(height: 20),
-          Image.asset('images/selfie.png', height: 300), // Mock selfie image
-          SizedBox(height: 20),
-          ElevatedButton(
-            onPressed: onContinue,
-            child: Text("Capture Photo"),
-          ),
-        ],
+    return Scaffold(
+      appBar: AppBar(
+        title: Text("Take Selfie"),
+      ),
+      body: Padding(
+        padding: EdgeInsets.all(16.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            if (_capturedImagePath != null)
+              Expanded(
+                child: Image.file(
+                  File(_capturedImagePath!),
+                  fit: BoxFit.contain,
+                ),
+              ),
+            if (_capturedImagePath == null)
+              Text(
+                "No selfie captured yet.",
+                style: TextStyle(fontSize: 16),
+              ),
+            SizedBox(height: 20),
+            if (_capturedImagePath != null)
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  ElevatedButton(
+                    onPressed: capturePhoto,
+                    child: Text("Retake"),
+                  ),
+                  ElevatedButton(
+                    onPressed: widget.onContinue,
+                    child: Text("Continue"),
+                  ),
+                ],
+              )
+            else
+              ElevatedButton(
+                onPressed: capturePhoto,
+                child: Text("Capture Photo"),
+              ),
+          ],
+        ),
       ),
     );
   }
