@@ -36,7 +36,7 @@ class CardOverlay implements OverlayModel {
   static byFormat(OverlayFormat format) {
     switch (format) {
       case (OverlayFormat.aadharCard):
-        return CardOverlay(ratio: 1.2, cornerRadius: 0.064);
+        return CardOverlay(ratio: 1.3, cornerRadius: 0.064);
     }
   }
 }

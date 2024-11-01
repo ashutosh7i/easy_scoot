@@ -94,17 +94,24 @@ class AuthAPI extends ChangeNotifier {
   }
 
   // update user Perfs
-  updatePreferences({required String bio}) async {
-    return account.updatePrefs(prefs: {'bio': bio});
-  }
+  // updatePreferences({required String bio}) async {
+  //   print('Updating user preferences with bio: $bio');
+  //   final result = await account.updatePrefs(prefs: {'bio': bio});
+  //   print('User preferences updated: $result');
+  //   return result;
+  // }
 
   isuserOnboarded() async {
+    print('Checking if user is onboarded');
     final prefs = await getUserPreferences();
-    return prefs.data['onboarded'] ?? false;
+    final isOnboarded = prefs.data['onboarded'] ?? false;
+    print('User onboarded status: $isOnboarded');
+    return isOnboarded;
   }
 
   onboardUser() async {
-    return account.updatePrefs(prefs: {'onboarded': true});
+    final result = await account.updatePrefs(prefs: {'onboarded': 'true'});
+    return result;
   }
   //
 }

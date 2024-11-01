@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:io';
 
 class StartupLoader extends StatelessWidget {
   final String text;
@@ -24,7 +25,7 @@ class StartupLoader extends StatelessWidget {
             children: [
               ClipOval(
                 child: Image.asset(
-                  'images/loaderlogo.jpg',
+                  'assets/images/loaderlogo.jpg',
                   width: imageSize,
                   height: imageSize,
                   fit: BoxFit.cover,

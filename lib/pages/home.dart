@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:easy_scoot/appwrite/auth.dart';
 import 'package:provider/provider.dart';
+import 'package:easy_scoot/pages/otpLogin.dart';
 
 class Home extends StatefulWidget {
   const Home({Key? key}) : super(key: key);
@@ -29,16 +30,20 @@ class _AccountPageState extends State<Home> {
     });
   }
 
-  savePreferences() {
-    final AuthAPI appwrite = context.read<AuthAPI>();
-    appwrite.updatePreferences(bio: bioTextController.text);
-    const snackbar = SnackBar(content: Text('Preferences updated!'));
-    ScaffoldMessenger.of(context).showSnackBar(snackbar);
-  }
+  // savePreferences() {
+  //   final AuthAPI appwrite = context.read<AuthAPI>();
+  //   appwrite.updatePreferences(bio: bioTextController.text);
+  //   const snackbar = SnackBar(content: Text('Preferences updated!'));
+  //   ScaffoldMessenger.of(context).showSnackBar(snackbar);
+  // }
 
-  signOut() {
+  Logout() {
     final AuthAPI appwrite = context.read<AuthAPI>();
     appwrite.signOut();
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => OTPVerificationPage()),
+    );
   }
 
   @override
@@ -55,7 +60,7 @@ class _AccountPageState extends State<Home> {
               icon: const Icon(Icons.logout),
               color: Colors.red,
               onPressed: () {
-                signOut();
+                Logout();
               },
             ),
           ],
@@ -84,7 +89,7 @@ class _AccountPageState extends State<Home> {
                         ),
                         const SizedBox(height: 16),
                         TextButton(
-                          onPressed: () => savePreferences(),
+                          onPressed: () => {},
                           child: const Text('Save Preferences'),
                         ),
                       ]),

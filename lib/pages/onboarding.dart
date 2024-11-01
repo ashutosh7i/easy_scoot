@@ -8,10 +8,16 @@ import 'package:intl/intl.dart';
 import 'package:livelyness_detection/livelyness_detection.dart';
 import 'dart:io';
 import 'package:camera/camera.dart';
-import 'dart:io';
-import 'package:flutter/material.dart';
 import 'package:easy_scoot/services/camera_overlay.dart';
 import 'package:easy_scoot/services/model.dart';
+import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
+import 'package:appwrite/appwrite.dart';
+import 'dart:io';
+import 'package:flutter/material.dart';
+import 'package:camera/camera.dart';
+import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:path/path.dart' as path;
 
 class Onboarding extends StatefulWidget {
   const Onboarding({Key? key}) : super(key: key);
@@ -29,40 +35,57 @@ class _OnboardingState extends State<Onboarding> {
     _checkOnboarding();
   }
 
-  void _checkOnboarding() async {
-    final auth = Provider.of<AuthAPI>(context, listen: false);
-    bool isOnboarded = await auth.isuserOnboarded();
-    if (isOnboarded) {
+  Future<void> _checkOnboarding() async {
+    void _renderOnboardingPage() {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => OnboardingPage()),
+      );
+    }
+
+    void _renderHomePage() {
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => Home()),
       );
-    } else {
+    }
+
+    try {
+      final auth = Provider.of<AuthAPI>(context, listen: false);
+      var prefs = await auth.getUserPreferences();
+      if (prefs.data['onboarded'] == 'true') {
+        print('User is already onboarded.');
+        _renderHomePage();
+        setState(() {
+          _isLoading = false;
+        });
+      } else {
+        print('User needs to complete onboarding.');
+        setState(() {
+          _isLoading = false;
+        });
+        _renderOnboardingPage();
+      }
+    } on AppwriteException catch (e) {
+      print('AppwriteException: ${e.message}, Code: ${e.code}');
+      setState(() {
+        _isLoading = false;
+      });
+    } catch (e) {
+      print('An unexpected error occurred: $e');
       setState(() {
         _isLoading = false;
       });
     }
   }
 
-  void _completeOnboarding() async {
-    final auth = Provider.of<AuthAPI>(context, listen: false);
-    await auth.onboardUser();
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (context) => Home()),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: _isLoading
-          ? StartupLoader() // Show the loading indicator while checking
-          : OnboardingPage(),
+      body: _isLoading ? StartupLoader() : OnboardingPage(),
     );
   }
 }
-
 ///////
 
 class OnboardingPage extends StatefulWidget {
@@ -116,7 +139,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
     return Scaffold(
       appBar: AppBar(
         title: Image(
-          image: AssetImage('images/navlogo.png'),
+          image: AssetImage('assets/images/navlogo.png'),
           height: 30,
         ),
         centerTitle: true,
@@ -322,124 +345,6 @@ class _PersonalDetailsPageState extends State<PersonalDetailsPage> {
   }
 }
 
-// class TakeSelfiePage extends StatelessWidget {
-//   final VoidCallback onContinue;
-
-//   TakeSelfiePage({required this.onContinue});
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return Padding(
-//       padding: EdgeInsets.all(16.0),
-//       child: Column(
-//         mainAxisAlignment: MainAxisAlignment.center,
-//         children: [
-//           Text(
-//             "Take Selfie",
-//             style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-//           ),
-//           Text(
-//             "Fill your details and click continue",
-//             style: TextStyle(fontSize: 15, color: Colors.grey),
-//           ),
-//           SizedBox(height: 20),
-//           Image.asset('images/selfie.png', height: 300), // Mock selfie image
-//           SizedBox(height: 20),
-//           ElevatedButton(
-//             child: Text("Capture Photo"),
-//             onPressed: () async {
-//               try {
-//                 final String? response =
-//                     await LivelynessDetection.instance.detectLivelyness(
-//                   context,
-//                   config: DetectionConfig(
-//                     steps: [
-//                       LivelynessStepItem(
-//                         step: LivelynessStep.blink,
-//                         title: "Blink",
-//                         isCompleted: false,
-//                       ),
-//                       LivelynessStepItem(
-//                         step: LivelynessStep.smile,
-//                         title: "Smile",
-//                         isCompleted: false,
-//                       ),
-//                     ],
-//                     startWithInfoScreen: true,
-//                   ),
-//                 );
-
-//                 // Handle the response by showing an alert dialog
-//                 if (response != null) {
-//                   showDialog(
-//                     context: context,
-//                     builder: (BuildContext context) {
-//                       return AlertDialog(
-//                         title: Text("Success"),
-//                         content:
-//                             Text("Livelyness Detection Response: $response"),
-//                         actions: <Widget>[
-//                           TextButton(
-//                             child: Text("OK"),
-//                             onPressed: () {
-//                               Navigator.of(context).pop(); // Close the dialog
-//                             },
-//                           ),
-//                         ],
-//                       );
-//                     },
-//                   );
-//                 } else {
-//                   // Handle null response if necessary
-//                   showDialog(
-//                     context: context,
-//                     builder: (BuildContext context) {
-//                       return AlertDialog(
-//                         title: Text("No Response"),
-//                         content: Text(
-//                             "No response was received from the detection."),
-//                         actions: <Widget>[
-//                           TextButton(
-//                             child: Text("OK"),
-//                             onPressed: () {
-//                               Navigator.of(context).pop(); // Close the dialog
-//                             },
-//                           ),
-//                         ],
-//                       );
-//                     },
-//                   );
-//                 }
-//               } catch (e) {
-//                 // Handle any errors that occur during detection
-//                 showDialog(
-//                   context: context,
-//                   builder: (BuildContext context) {
-//                     return AlertDialog(
-//                       title: Text("Error"),
-//                       content: Text("An error occurred during detection: $e"),
-//                       actions: <Widget>[
-//                         TextButton(
-//                           child: Text("OK"),
-//                           onPressed: () {
-//                             Navigator.of(context).pop(); // Close the dialog
-//                           },
-//                         ),
-//                       ],
-//                     );
-//                   },
-//                 );
-//               }
-//             },
-//           ),
-//         ],
-//       ),
-//     );
-//   }
-// }
-
-// import 'package:flutter/material.dart';
-// import 'package:livelyness_detection/livelyness_detection.dart';
 class TakeSelfiePage extends StatefulWidget {
   final VoidCallback onContinue;
 
@@ -570,37 +475,85 @@ class _TakeSelfiePageState extends State<TakeSelfiePage> {
   }
 }
 
-class AadharScanPage extends StatelessWidget {
+class AadharScanPage extends StatefulWidget {
   final VoidCallback onContinue;
 
   AadharScanPage({required this.onContinue});
 
   @override
+  _AadharScanPageState createState() => _AadharScanPageState();
+}
+
+class _AadharScanPageState extends State<AadharScanPage> {
+  String? _capturedImagePath;
+  String? _extractedText;
+
+  @override
   Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text("Aadhar Scan"),
+      ),
+      body: _buildMainContent(),
+    );
+  }
+
+  Widget _buildMainContent() {
     return Padding(
       padding: EdgeInsets.all(16.0),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Text(
-            "Aadhar Scan",
-            style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-          ),
-          Text(
-            "We will scan your Aadhar card to validate.",
-            style: TextStyle(fontSize: 15, color: Colors.grey),
-          ),
+          if (_capturedImagePath != null)
+            Image.file(
+              File(_capturedImagePath!),
+              height: 200,
+              width: double.infinity,
+              fit: BoxFit.cover,
+            )
+          else
+            Image.asset('assets/images/card.png', height: 200),
           SizedBox(height: 20),
-          Image.asset('images/card.png', height: 200), // Mock Aadhar image
+          if (_extractedText != null)
+            Expanded(
+              child: SingleChildScrollView(
+                child: Text(_extractedText!),
+              ),
+            )
+          else
+            Text(
+              "We will scan your Aadhar card to validate.",
+              style: TextStyle(fontSize: 15, color: Colors.grey),
+            ),
           SizedBox(height: 20),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (context) => ExampleCameraOverlay()),
-              );
-            },
-            child: Text("Scan Aadhar"),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      fullscreenDialog: true,
+                      builder: (context) => AadharScannerPage(
+                        onCapture: (String imagePath, String extractedText) {
+                          setState(() {
+                            _capturedImagePath = imagePath;
+                            _extractedText = extractedText;
+                          });
+                        },
+                      ),
+                    ),
+                  );
+                },
+                child:
+                    Text(_capturedImagePath == null ? "Scan Aadhar" : "Retry"),
+              ),
+              if (_capturedImagePath != null)
+                ElevatedButton(
+                  onPressed: widget.onContinue,
+                  child: Text("Continue"),
+                ),
+            ],
           ),
         ],
       ),
@@ -608,119 +561,107 @@ class AadharScanPage extends StatelessWidget {
   }
 }
 
-class ExampleCameraOverlay extends StatelessWidget {
-  const ExampleCameraOverlay({Key? key}) : super(key: key);
+class AadharScannerPage extends StatelessWidget {
+  final Function(String, String) onCapture;
+
+  AadharScannerPage({required this.onCapture});
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      home: Scaffold(
-        backgroundColor: Colors.white,
-        body: FutureBuilder<List<CameraDescription>?>(
-          future: availableCameras(),
-          builder: (context, snapshot) {
-            if (snapshot.hasData) {
-              if (snapshot.data == null) {
-                return const Align(
-                  alignment: Alignment.center,
-                  child: Text(
-                    'No camera found',
-                    style: TextStyle(color: Colors.black),
-                  ),
-                );
-              }
-              return CameraOverlay(
-                snapshot.data!.first,
-                CardOverlay.byFormat(OverlayFormat.aadharCard),
-                (XFile file) => showDialog(
-                  context: context,
-                  barrierColor: Colors.black,
-                  builder: (context) {
-                    CardOverlay overlay =
-                        CardOverlay.byFormat(OverlayFormat.aadharCard);
-                    return AlertDialog(
-                      actionsAlignment: MainAxisAlignment.center,
-                      backgroundColor: Colors.black,
-                      title: const Text(
-                        'Capture',
-                        style: TextStyle(color: Colors.white),
-                        textAlign: TextAlign.center,
-                      ),
-                      actions: [
-                        // close
-                        OutlinedButton(
-                          onPressed: () => Navigator.of(context).pop(),
-                          child: const Icon(Icons.refresh),
-                        ),
-                        // continue
-                        OutlinedButton(
-                          onPressed: () {
-                            Navigator.of(context).pop();
-                            showDialog(
-                              context: context,
-                              builder: (BuildContext context) {
-                                return AlertDialog(
-                                  title: Text('Success'),
-                                  content:
-                                      Text('Operation completed successfully.'),
-                                  actions: <Widget>[
-                                    TextButton(
-                                      child: Text('OK'),
-                                      onPressed: () {
-                                        Navigator.of(context).pop();
-                                      },
-                                    ),
-                                  ],
-                                );
-                              },
-                            );
-                          },
-                          child: const Icon(Icons.check),
-                        ),
-                      ],
-                      content: SizedBox(
-                        width: double.infinity,
-                        child: AspectRatio(
-                          aspectRatio: overlay.ratio!,
-                          child: Container(
-                            decoration: BoxDecoration(
-                              image: DecorationImage(
-                                fit: BoxFit.fitWidth,
-                                alignment: FractionalOffset.center,
-                                image: FileImage(
-                                  File(file.path),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    );
-                  },
+    return Scaffold(
+      extendBodyBehindAppBar: true,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        actions: [
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: GestureDetector(
+              onTap: () => Navigator.of(context).pop(),
+              child: Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.white,
                 ),
-                info:
-                    'Position your ID card within the rectangle and ensure the image is perfectly readable.',
-                label: 'Scan ID Card',
-              );
-            } else {
+                child: Icon(Icons.close, color: Colors.black),
+              ),
+            ),
+          ),
+        ],
+      ),
+      body: FutureBuilder<List<CameraDescription>?>(
+        future: availableCameras(),
+        builder: (context, snapshot) {
+          if (snapshot.hasData) {
+            if (snapshot.data == null) {
               return const Align(
                 alignment: Alignment.center,
                 child: Text(
-                  'Fetching cameras',
+                  'No camera found',
                   style: TextStyle(color: Colors.black),
                 ),
               );
             }
-          },
-        ),
+            return CameraOverlay(
+              snapshot.data!.first,
+              CardOverlay.byFormat(OverlayFormat.aadharCard),
+              (XFile file) async {
+                String extractedText = await recognizeText(file.path);
+                onCapture(file.path, extractedText);
+                Navigator.of(context).pop();
+              },
+              info:
+                  'Position your ID card within the rectangle and ensure the image is perfectly readable.',
+              label: 'Scan ID Card',
+            );
+          } else {
+            return const Align(
+              alignment: Alignment.center,
+              child: Text(
+                'Fetching cameras',
+                style: TextStyle(color: Colors.black),
+              ),
+            );
+          }
+        },
       ),
     );
+  }
+
+  Future<String> recognizeText(String imagePath) async {
+    final inputImage = InputImage.fromFilePath(imagePath);
+    final textRecognizer = TextRecognizer();
+    final RecognizedText recognizedText =
+        await textRecognizer.processImage(inputImage);
+    return recognizedText.text;
   }
 }
 
 class AuthenticationSuccessfulPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    void _completeOnboarding() async {
+      final auth = Provider.of<AuthAPI>(context, listen: false);
+      try {
+        await auth.onboardUser();
+      } catch (e) {
+        print('Error during user onboarding: $e');
+        // You might want to handle this error, perhaps show a dialog to the user
+      }
+
+      try {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => Home()),
+        );
+      } catch (e) {
+        print('Error during navigation to Home page: $e');
+        // You might want to handle this error as well
+      }
+    }
+
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -730,7 +671,8 @@ class AuthenticationSuccessfulPage extends StatelessWidget {
             style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
           ),
           SizedBox(height: 20),
-          Image.asset('images/success.png', height: 200), // Mock success image
+          Image.asset('assets/images/success.png',
+              height: 200), // Mock success image
           SizedBox(height: 20),
           Text(
             "Thank you for going through verification process. Click the button below to continue.",
@@ -740,8 +682,11 @@ class AuthenticationSuccessfulPage extends StatelessWidget {
           ElevatedButton(
             onPressed: () {
               // call validator function that takes all and validates, if true sets the onboarded to true and navigates to home
-
-              Navigator.pop(context);
+              _completeOnboarding();
+              // Navigator.pushReplacement(
+              //   context,
+              //   MaterialPageRoute(builder: (context) => Home()),
+              // );
             },
             child: Text("Let's Go"),
           ),
