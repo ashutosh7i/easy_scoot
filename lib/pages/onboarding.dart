@@ -7,6 +7,11 @@ import 'package:percent_indicator/linear_percent_indicator.dart';
 import 'package:intl/intl.dart';
 import 'package:livelyness_detection/livelyness_detection.dart';
 import 'dart:io';
+import 'package:camera/camera.dart';
+import 'dart:io';
+import 'package:flutter/material.dart';
+import 'package:easy_scoot/services/camera_overlay.dart';
+import 'package:easy_scoot/services/model.dart';
 
 class Onboarding extends StatefulWidget {
   const Onboarding({Key? key}) : super(key: key);
@@ -66,7 +71,7 @@ class OnboardingPage extends StatefulWidget {
 }
 
 class _OnboardingPageState extends State<OnboardingPage> {
-  int currentStep = 2;
+  int currentStep = 3;
 
   void _goToNextStep() {
     if (currentStep < 4) {
@@ -589,10 +594,125 @@ class AadharScanPage extends StatelessWidget {
           Image.asset('images/card.png', height: 200), // Mock Aadhar image
           SizedBox(height: 20),
           ElevatedButton(
-            onPressed: onContinue,
+            onPressed: () {
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => ExampleCameraOverlay()),
+              );
+            },
             child: Text("Scan Aadhar"),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class ExampleCameraOverlay extends StatelessWidget {
+  const ExampleCameraOverlay({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      home: Scaffold(
+        backgroundColor: Colors.white,
+        body: FutureBuilder<List<CameraDescription>?>(
+          future: availableCameras(),
+          builder: (context, snapshot) {
+            if (snapshot.hasData) {
+              if (snapshot.data == null) {
+                return const Align(
+                  alignment: Alignment.center,
+                  child: Text(
+                    'No camera found',
+                    style: TextStyle(color: Colors.black),
+                  ),
+                );
+              }
+              return CameraOverlay(
+                snapshot.data!.first,
+                CardOverlay.byFormat(OverlayFormat.aadharCard),
+                (XFile file) => showDialog(
+                  context: context,
+                  barrierColor: Colors.black,
+                  builder: (context) {
+                    CardOverlay overlay =
+                        CardOverlay.byFormat(OverlayFormat.aadharCard);
+                    return AlertDialog(
+                      actionsAlignment: MainAxisAlignment.center,
+                      backgroundColor: Colors.black,
+                      title: const Text(
+                        'Capture',
+                        style: TextStyle(color: Colors.white),
+                        textAlign: TextAlign.center,
+                      ),
+                      actions: [
+                        // close
+                        OutlinedButton(
+                          onPressed: () => Navigator.of(context).pop(),
+                          child: const Icon(Icons.refresh),
+                        ),
+                        // continue
+                        OutlinedButton(
+                          onPressed: () {
+                            Navigator.of(context).pop();
+                            showDialog(
+                              context: context,
+                              builder: (BuildContext context) {
+                                return AlertDialog(
+                                  title: Text('Success'),
+                                  content:
+                                      Text('Operation completed successfully.'),
+                                  actions: <Widget>[
+                                    TextButton(
+                                      child: Text('OK'),
+                                      onPressed: () {
+                                        Navigator.of(context).pop();
+                                      },
+                                    ),
+                                  ],
+                                );
+                              },
+                            );
+                          },
+                          child: const Icon(Icons.check),
+                        ),
+                      ],
+                      content: SizedBox(
+                        width: double.infinity,
+                        child: AspectRatio(
+                          aspectRatio: overlay.ratio!,
+                          child: Container(
+                            decoration: BoxDecoration(
+                              image: DecorationImage(
+                                fit: BoxFit.fitWidth,
+                                alignment: FractionalOffset.center,
+                                image: FileImage(
+                                  File(file.path),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+                info:
+                    'Position your ID card within the rectangle and ensure the image is perfectly readable.',
+                label: 'Scan ID Card',
+              );
+            } else {
+              return const Align(
+                alignment: Alignment.center,
+                child: Text(
+                  'Fetching cameras',
+                  style: TextStyle(color: Colors.black),
+                ),
+              );
+            }
+          },
+        ),
       ),
     );
   }
