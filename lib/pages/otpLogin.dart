@@ -4,10 +4,7 @@ import 'package:country_code_picker/country_code_picker.dart';
 import 'package:easy_scoot/appwrite/auth.dart';
 import 'package:easy_scoot/widgets/help_page.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:easy_scoot/pages/onboarding.dart';
-import 'package:easy_scoot/pages/home.dart';
 import 'package:appwrite/appwrite.dart';
 import 'package:flutter_otp_text_field/flutter_otp_text_field.dart';
 

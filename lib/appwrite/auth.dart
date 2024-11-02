@@ -68,6 +68,13 @@ class AuthAPI extends ChangeNotifier {
   Future<Session> createPhoneSession(
       {required String userId, required String otp}) async {
     try {
+      // Check if current session exists and logout if present
+      try {
+        await account.deleteSession(sessionId: 'current');
+      } catch (e) {
+        // Ignore error if no current session exists
+      }
+
       final session = await account.createSession(userId: userId, secret: otp);
       _currentUser = await account.get();
       _status = AuthStatus.authenticated;
