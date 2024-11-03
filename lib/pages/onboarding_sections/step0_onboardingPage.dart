@@ -73,8 +73,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
                     children: [
                       Text('Step ${currentStep} of 4'),
                       LinearPercentIndicator(
-                        animation:
-                            bool.fromEnvironment(getProgress().toString()),
+                        animation: true,
                         alignment: MainAxisAlignment.center,
                         width: MediaQuery.of(context).size.width * 0.8,
                         lineHeight: 14.0,

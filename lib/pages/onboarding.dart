@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:easy_scoot/appwrite/auth.dart';
-import 'home.dart';
+import 'package:easy_scoot/pages/home.dart';
 import 'package:easy_scoot/widgets/Astartup_loading.dart';
 import 'package:appwrite/appwrite.dart';
 import 'package:easy_scoot/pages/onboarding_sections/step0_onboardingPage.dart';
